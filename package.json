@@ -1,0 +1,12 @@
+{
+  "name": "talks",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Any talks as code",
+  "main": "index.js",
+  "author": "Oliver Bell <freshollie@gmail.com>",
+  "license": "MIT",
+  "workspaces": [
+    "talks/**/*"
+  ]
+}

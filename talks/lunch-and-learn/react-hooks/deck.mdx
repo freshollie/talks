@@ -1,0 +1,1199 @@
+import { prism } from "@mdx-deck/themes";
+import ClassComponent from "./components/ClassComponent";
+import CountComponent from "./components/CountComponent";
+import RefComponent from "./components/RefComponent";
+import FunctionComponent from "./components/FunctionComponent";
+import FlexLayout from "./components/FlexLayout";
+import { Component1, Component2 } from "./components/ComponentsWithDoubler";
+import {
+  CountComponent1 as CounterComponent,
+  CountComponent2 as CounterComponent2,
+} from "./components/CounterComponents";
+import ContextComponent from "./components/ContextComponent";
+
+export const theme = {
+  colors: {
+    text: "#fff",
+    background: "rgb(6, 47, 101)",
+    primary: "rgb(228, 34, 142)",
+  },
+  Slide: {
+    display: "block",
+    padding: "2em",
+    width: "100%",
+  },
+  styles: {
+    pre: {
+      borderRadius: "5px",
+    },
+  },
+  ...prism,
+};
+
+# React Hooks 🪝
+
+---
+
+## History
+
+## Hooks
+
+## The rules
+
+## Gotchas/Performance
+
+---
+
+# History
+
+---
+
+<FlexLayout>
+
+```jsx
+class DoubleApp extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      number: 1,
+    };
+  }
+
+  double() {
+    this.setState({ number: this.state.number * 2 });
+  }
+
+  render() {
+    return (
+      <div style={{ margin: "50px" }}>
+        <button onClick={() => this.double()}>Click me!</button>
+        <h1>{this.state.number}</h1>
+      </div>
+    );
+  }
+}
+```
+
+<div>
+  <ClassComponent />
+  <ClassComponent />
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+```jsx
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      this.setState({ number: this.state.number + 1 });
+    }, 1000);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this.timer);
+  }
+
+  render() {
+    return <h1>{this.state.number}</h1>
+  }
+```
+
+<div style={{ margin: "50px" }}>
+  <CountComponent />
+</div>
+
+</FlexLayout>
+
+---
+
+## No shared logic 🥵
+
+## Hard to follow state flow 🍝
+
+## Typescript types are complicated 😕
+
+---
+
+# Recompose
+
+## github.com/acdlite/recompose
+
+```jsx
+import { withState } from "recompose";
+
+const enhance = withState("counter", "setCounter", 0);
+const Counter = enhance(({ counter, setCounter }) => (
+  <div>
+    Count: {counter}
+    <button onClick={() => setCounter((n) => n + 1)}>Increment</button>
+    <button onClick={() => setCounter((n) => n - 1)}>Decrement</button>
+  </div>
+));
+```
+
+---
+
+# Hooks?
+
+---
+
+## Introduced in React 16.8
+
+## NOT a breaking change and interact perfectly with older APIs
+
+---
+
+# useState
+
+<FlexLayout>
+
+```jsx
+import React, { useState } from "react";
+
+const DoubleApp = () => {
+  const [number, setNumber] = useState(1);
+  return (
+    <div>
+      <button
+        onClick={() => {
+          setNumber(number * 2);
+        }}
+      >
+        Click me!
+      </button>
+      <h1>{number}</h1>
+    </div>
+  );
+};
+```
+
+<div style={{ margin: "100px" }}>
+  <FunctionComponent />
+  <FunctionComponent />
+</div>
+
+</FlexLayout>
+
+---
+
+```jsx
+import React, { useState, useCallback } from "react";
+
+const useDoubler = () => {
+  const [number, setNumber] = useState(1);
+
+  return [number, () => setNumber(number * 2)];
+};
+```
+
+---
+
+<FlexLayout>
+
+```jsx
+const Component1 = () => {
+  const [number, double] = useDoubler();
+  return (
+    <div>
+      <button onClick={double}>Click me!</button>
+      <h1>{number}</h1>
+    </div>
+  );
+};
+
+const Component2 = () => {
+  const [number, double] = useDoubler();
+  return <button onClick={double}>Click me! ({number})</button>;
+};
+```
+
+<div style={{ margin: "100px" }}>
+  <Component1 />
+  <Component2 />
+</div>
+
+</FlexLayout>
+
+---
+
+# useEffect
+
+<FlexLayout>
+
+<div style={{ width: "75%" }}>
+
+```jsx
+const CountApp = () => {
+  const [number, setNumber] = useState(1);
+
+  useEffect(() => {
+    // Component did mount
+    const timeout = setInterval(() => {
+      setNumber((n) => n + 1);
+    }, 1000);
+
+    // Component will unmount
+    return () => clearTimeout(timeout);
+  }, [setNumber]);
+
+  return <h1>{number}</h1>;
+};
+```
+
+</div>
+
+<div style={{ margin: "50px" }}>
+  <CounterComponent />
+</div>
+
+</FlexLayout>
+
+---
+
+```jsx
+const useCount = () => {
+  const [number, setNumber] = useState(1);
+
+  useEffect(() => {
+    const timeout = setInterval(() => {
+      setNumber((n) => n + 1);
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [setNumber]);
+
+  return number;
+};
+```
+
+---
+
+<FlexLayout>
+
+```jsx
+const CountComponent1 = () => {
+  const number = useCount();
+  return <h1>{number}</h1>;
+};
+
+const CountComponent2 = () => {
+  const number = useCount();
+  return <button>Some button {number}</button>;
+};
+```
+
+<div style={{ margin: "50px" }}>
+  <CounterComponent />
+  <CounterComponent2 />
+</div>
+
+</FlexLayout>
+
+---
+
+# useContext
+
+<FlexLayout>
+
+```jsx
+import React, { createContext, useContext } from "react";
+
+const MyContext = createContext();
+
+const Component = () => {
+  const data = useContext(MyContext);
+  return <h1>{data}</h1>;
+};
+
+const App = () => {
+  return (
+    <MyContext.Provider value="Bulb!">
+      <Component />
+    </MyContext.Provider>
+  );
+};
+```
+
+<div style={{ margin: "50px" }}>
+  <ContextComponent />
+</div>
+
+</FlexLayout>
+
+---
+
+# Hooks are composeable! 🏗
+
+---
+
+# The Primary Colours 🎨
+
+# `useState`
+
+# `useEffect`
+
+# `useContext`
+
+---
+
+# `useRef`
+
+# `useMemo`
+
+# `useCallback`
+
+# `useReducer`
+
+# ...
+
+---
+
+# useRef
+
+<FlexLayout>
+
+<div style={{ width: "75%" }}>
+
+```jsx
+const Component = () => {
+  const divRef = useRef();
+  const [width, setWidth] = useState();
+
+  useEffect(() => {
+    setWidth(divRef.current.clientWidth);
+  }, [divRef]);
+
+  const time = new Date().toTimeString().split(" ")[0];
+  return (
+    <div>
+      <h1 ref={divRef}>Hello lunch and learn! It's {time}</h1>
+      {width && <h2>^ That's {width}px wide</h2>}
+    </div>
+  );
+};
+```
+
+</div>
+
+<div style={{ margin: "50px" }}>
+  <RefComponent />
+</div>
+
+</FlexLayout>
+
+---
+
+```jsx
+const useRef = (initialValue) => {
+  const ref = useState(() => {
+    const refFunc = (newValue) => {
+      ref.current = newValue;
+    };
+    refFunc.current = initialValue;
+
+    return refFunc;
+  });
+
+  return ref;
+};
+```
+
+---
+
+# useMemo
+
+```jsx
+const Component = () => {
+  const data = useMemo(() => {
+    // Long running calc
+    // or same reference
+  }, [depsForCalc])
+  ...
+}
+
+```
+
+---
+
+```jsx
+import React, { useRef } from "react";
+
+const useMemo = (factory, deps) => {
+  const depsRef = useRef(null);
+  const memoriedRef = useRef(null);
+
+  if (!depsRef.current || !isSame(depsRef.current, deps)) {
+    depsRef.current = deps;
+    memoriedRef.current = factory();
+  }
+
+  return memoriedRef.current;
+};
+```
+
+---
+
+# useCallback
+
+```jsx
+import React, { useRef } from "react";
+
+const useCallback = (callback, deps) => useMemo(() => callback, deps);
+```
+
+---
+
+# `useState`
+
+⬇️
+
+# `useRef`
+
+⬇️
+
+# `useMemo`
+
+⬇️
+
+# `useCallback`
+
+---
+
+# Disclaimer
+
+This is not how react composes these in production
+
+---
+
+# But how do they work?
+
+---
+
+```jsx
+const DoubleApp = () => {
+  const [number, setNumber] = useState(1);
+
+  ...
+};
+```
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver"); // <---
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Oliver", // <--
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586"); // <---
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Oliver",
+  "07584838586", // <--
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);  // <---
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Oliver",
+  "07584838586",
+  ["Oliver"], // <---
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  useEffect(() => {
+    document.title = name; // <---
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Oliver",
+  "07584838586",
+  ["Oliver"], // <---
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+  // event -> setName("Ollie")
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  -"Oliver",
+  +"Ollie", // Replace
+  "07584838586",
+  ["Oliver"],
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver"); // <---
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Ollie", // <---
+  "07584838586",
+  ["Oliver"],
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586"); // <---
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Ollie",
+  "07584838586", // <---
+  ["Oliver"],
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]); // <---
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Ollie",
+  "07584838586",
+  ["Oliver"], // <---
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  useEffect(() => {
+    document.title = name; // <---
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Ollie",
+  "07584838586",
+  ["Ollie"], // <---
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+# Rules of hooks 101
+
+🚨 Don’t call Hooks inside loops, conditions, or nested functions 🚨
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver"); // <---
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  if (name === "Ollie") {
+    const details = useData(name);
+
+    return <div>{details}</div>
+  }
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Ollie", // <---
+  "07584838586",
+  ["Oliver"],
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586"); // <---
+
+  if (name === "Ollie") {
+    const details = useData(name);
+
+    return <div>{details}</div>
+  }
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Ollie",
+  "07584838586", // <---
+  ["Oliver"],
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  if (name === "Ollie") {
+    const details = useData(name); // <---
+
+    return <div>{details}</div>
+  }
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Ollie",
+  "07584838586",
+  ["Oliver"], // <--- 🥴 borked
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+<FlexLayout>
+
+<div style={ { width: "1200px" }}>
+
+```jsx
+const Component = () => {
+  const [name, setName] = useState("Oliver");
+  const [
+    phoneNumber,
+    setPhoneNumber
+  ] = useState("07584838586");
+
+  const details = useData(name, { skip: name !== "Ollie" });
+
+  useEffect(() => {
+    document.title = name;
+  }, [name]);
+
+  ...
+};
+```
+
+</div>
+
+<div style={ { margin: "50px" }}>
+
+## "Memory"
+
+```jsx
+[
+  "Ollie",
+  "07584838586",
+  ...
+];
+```
+
+</div>
+
+</FlexLayout>
+
+---
+
+# Further reading
+
+## reactjs.org/docs/hooks-rules.html
+
+---
+
+# Believe the linter!
+
+---
+
+# Gotchas
+
+---
+
+## `useEffect` deps are confusing
+
+---
+
+```jsx
+const useMyHook = () => {
+  return {
+    someData: ...,
+    someOtherData: ...
+  }
+}
+
+const Component = () => {
+  const data = useMyHook(...)
+
+  useEffect(() => {
+    ...
+    // Gonna be a bad time
+  }, [data]);
+}
+```
+
+---
+
+## github.com/kentcdodds/use-deep-compare-effect
+
+---
+
+WARNING: Please only use this if you really can't find a way to use `React.useEffect`.
+
+There's often a better way to do what you're trying to do than a deep comparison.
+
+---
+
+```jsx
+const Component = () => {
+  const { someData } = useMyHook(...)
+
+  useEffect(() => {
+    ...
+  }, [someData]);
+}
+```
+
+---
+
+```jsx
+useMemo(
+  () => ({
+    someData,
+    someOtherData,
+  }),
+  [someData, someOtherData]
+);
+```
+
+```jsx
+useCallback(() => setNumber((n) => n + 1), [setNumber]);
+```
+
+---
+
+# Performance 🏎
+
+---
+
+## Hooks = more lines executing per render
+
+---
+
+# `useState`
+
+⬇️
+
+# `useRef`
+
+⬇️
+
+# `useMemo`
+
+⬇️
+
+# `useCallback`
+
+---
+
+## 🙏 JS engine gods auto optimise repetative code
+
+<Steps>
+
+## Your bottleneck is very likely to be DOM rendering
+
+## Don't optimise unless you really need to
+
+</Steps>
+
+---
+
+```jsx
+const Component = () => {
+  const data = useMyHook(...)
+
+  useEffect(() => {
+    ...
+    // Gonna be a bad time
+  }, [data]);
+}
+```
+
+---
+
+# Source
+
+## reactjs.org/docs/hooks-intro.html
+
+---
+
+# I ❤️ Hooks
+
+# You should too

@@ -1,0 +1,278 @@
+import { prism } from "@mdx-deck/themes";
+import LegacyFileAccessSummary from "./components/LegacyFileAccessSummary";
+import UsbRequestDeviceExample from "./components/UsbRequestDeviceExample";
+import UsbDeviceListExample from "./components/UsbDeviceListExample";
+import ReadFolderExample from "./components/ReadFolderExample";
+import FlexLayout from "./components/FlexLayout";
+
+export const theme = {
+  colors: {
+    text: "#fff",
+    background: "rgb(6, 47, 101)",
+    primary: "rgb(228, 34, 142)",
+  },
+  Slide: {
+    display: "block",
+    padding: "2em",
+    width: "100%",
+  },
+  styles: {
+    pre: {
+      borderRadius: "5px",
+    },
+    a: {
+      color: "white",
+    },
+  },
+  ...prism,
+};
+
+<div style={{ fontSize: "100px", fontWeight: "bold" }}>
+  Web USB and Filesystem APIs
+</div>
+
+A brief overview of how they work and where they are used
+
+---
+
+## This presentation is an interactive demo, running in a web browser
+
+---
+
+# Overview
+
+- What are these APIs are trying to solve
+- Interacting with the file system and USB devices in a browser
+- Real world demo
+
+
+---
+
+# There have always been limitation of the Web
+
+- Sandboxed
+- Browsers were not gaurenteed to be up to date
+
+---
+
+# Electron
+
+- Provides access to Node libraries
+- Let us access outside the sandbox
+- Guarantee an environment your code executes in
+
+---
+
+## It's 2022 - Who needs electron?
+
+- Javascript is more standardised than ever
+- Browsers are evergreen
+- APIs which let us break out of the sandbox have been made available
+
+---
+
+### Accessing files in the browser (the old way)
+
+<FlexLayout>
+
+<div style={{
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+  }}>
+
+```jsx
+  <input
+    type="file"
+    multiple
+    onChange={(event) => {
+      ...
+    }}
+  />
+```
+
+</div>
+
+<div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+  }}
+>
+  <LegacyFileAccessSummary />
+</div>
+
+</FlexLayout>
+
+---
+
+# Web File System Access API
+
+https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API
+
+Currently supported on most Chromium browsers on Windows, macOS, Chrome OS, and Linux
+
+Working Draft - 24 September 2021
+
+- Read files from a folder
+- Write files into a folder
+- Create folders in a folder
+- Update the contents of a file
+- Remove files from a folder
+
+---
+
+# Seems problematic?
+
+<ReadFolderExample />
+
+---
+
+# Accessing only comes through a tree
+
+<div>
+
+```jsx
+const rootHandle = await window.showDirectoryPicker({ id: "my-test" });
+
+for await (const entry of rootHandle.values()) {
+  const entryHandle = await entry.getHandle();
+  await rootHandle.removeEntry(entry.name);
+}
+```
+</div>
+
+
+(Same thing in node)
+
+<div>
+
+```jsx
+import fs from 'fs/promises';
+
+const files = await fs.readDir("directoryName");
+
+for (const file of files) {
+  await fs.unlink('directoryName/' + file)
+}
+```
+
+</div>
+
+---
+
+# In the wild
+
+https://vscode.dev
+
+https://excalidraw.com
+
+---
+
+# Take aways
+
+- Access is explicit (requires user interaction)
+- Operations are completed against a tree like api
+- Only available on chrome (for now)
+
+---
+
+<div style={{ fontSize: "80px", fontWeight: "bold" }}>Web USB</div>
+
+https://developer.mozilla.org/en-US/docs/Web/API/USB
+
+Supported in all chromium based browsers for a few years (including Android!)
+
+- Request access to a USB device
+- Access a list of previously accessed USB devices
+- Open a connection to a USB device
+- Read Write arbitrary USB packets
+
+---
+
+# Connecting to a device
+
+```jsx
+const device = await navigator.usb.requestDevice({ filters: [] });
+```
+
+<div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+  }}
+>
+  <UsbRequestDeviceExample />
+</div>
+
+---
+
+# Currently connected devices (remembers existing devices)
+
+```jsx
+const device = await navigator.usb.getDevices();
+```
+
+<div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+  }}
+>
+  <UsbDeviceListExample />
+</div>
+
+---
+
+# In the wild
+
+https://flash.android.com
+
+https://buddy.edgetx.org/#/flash?version=v2.6.0&target=nv14
+
+---
+
+# Take aways
+
+- Access is explicit (requires user interaction)
+- Devices are "paired" with a session after selection
+- Some devices will still require drivers for the OS to interact with the device (windows)
+
+---
+
+# Conclusion
+
+“Any application that can be written in JavaScript, will eventually be written in JavaScript.” - Jeff Atwood (2007)
+
+---
+
+# Further reading
+
+- https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API
+- https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API
+
+---
+
+# Useful resources
+
+### Types
+
+- https://www.npmjs.com/package/@types/wicg-file-system-access
+- https://www.npmjs.com/package/@types/w3c-web-usb
+
+### Libraries
+
+- https://github.com/node-usb/node-usb
+- https://github.com/jimmywarting/native-file-system-adapter
+- https://github.com/flipperdevices/webdfu
